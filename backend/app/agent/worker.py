@@ -88,12 +88,27 @@ class LeadQualifierAgent(Agent):
         """After each completed user turn, persist qualification results if detected."""
         text = (new_message.text_content or "").lower()
 
-        # Simple keyword detection to auto-update lead status
-        if any(w in text for w in ("interested", "yes", "sure", "definitely", "sounds good")):
-            await _persist_qualification(self._lead_id, "interested")
-        elif any(w in text for w in ("not interested", "no thanks", "not now", "don't want")):
+        # NOT_INTERESTED must be checked BEFORE interested — "not interested" contains "interested"
+        not_interested_phrases = (
+            "not interested", "no thanks", "not now", "don't want", "dont want",
+            "no interest", "not looking", "don't need", "dont need",
+            "not for me", "no need", "not want", "don't want to",
+        )
+        interested_phrases = (
+            "interested", "yes", "sure", "definitely", "sounds good",
+            "tell me more", "want to know", "i want", "sign me up",
+            "go ahead", "please do", "why not",
+        )
+        callback_phrases = (
+            "call back", "callback", "call me later", "call me back",
+            "later", "busy", "not a good time", "some other time",
+        )
+
+        if any(w in text for w in not_interested_phrases):
             await _persist_qualification(self._lead_id, "not_interested")
-        elif any(w in text for w in ("call back", "callback", "later", "busy")):
+        elif any(w in text for w in interested_phrases):
+            await _persist_qualification(self._lead_id, "interested")
+        elif any(w in text for w in callback_phrases):
             await _persist_qualification(self._lead_id, "callback_requested")
 
         await super().on_user_turn_completed(turn_ctx, new_message)
