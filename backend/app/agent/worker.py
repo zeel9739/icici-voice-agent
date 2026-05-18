@@ -13,6 +13,53 @@ Run with:
 import logging
 from collections.abc import AsyncGenerator
 
+# ── Patch livekit-agents 1.5.9 bug ──────────────────────────────────────────
+# Pydantic v2 strips the Instructions str-subclass down to a plain str when
+# storing in model fields.  The built-in serializer then crashes trying to
+# access .audio on a plain str.  We replace the serializer with one that is
+# safe for both Instructions instances and plain strings, then force
+# ChatMessage to recompile its schema so the fix is picked up.
+from livekit.agents.voice.agent import Instructions as _Instructions  # noqa: E402
+from livekit.agents.llm.chat_context import ChatMessage as _ChatMessage  # noqa: E402
+from pydantic_core import core_schema as _cs  # noqa: E402
+
+
+def _safe_instructions_serialize(v):
+    audio = v._audio_variant if hasattr(v, "_audio_variant") else str(v)
+    d = {"type": "instructions", "audio": audio}
+    tv = getattr(v, "_text_variant", None)
+    if tv is not None:
+        d["text"] = tv
+    return d
+
+
+@classmethod  # type: ignore[misc]
+def _patched_pydantic_schema(cls, source_type, handler):
+    def val_py(v):
+        if isinstance(v, cls):
+            return v
+        if isinstance(v, dict) and v.get("type") == "instructions":
+            return cls(v["audio"], text=v.get("text"))
+        raise ValueError(f"Cannot convert {type(v)!r} to Instructions")
+
+    def val_json(v):
+        if isinstance(v, dict) and v.get("type") == "instructions":
+            return cls(v["audio"], text=v.get("text"))
+        raise ValueError(f"Cannot convert {type(v)!r} to Instructions")
+
+    return _cs.json_or_python_schema(
+        python_schema=_cs.no_info_plain_validator_function(val_py),
+        json_schema=_cs.no_info_plain_validator_function(val_json),
+        serialization=_cs.plain_serializer_function_ser_schema(
+            _safe_instructions_serialize, info_arg=False
+        ),
+    )
+
+
+_Instructions.__get_pydantic_core_schema__ = _patched_pydantic_schema
+_ChatMessage.model_rebuild(force=True)
+# ────────────────────────────────────────────────────────────────────────────
+
 from livekit import agents
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
 from livekit.agents import llm as agents_llm
@@ -50,7 +97,7 @@ class LeadQualifierAgent(Agent):
     """Voice agent that qualifies ICICI Prudential AMC leads."""
 
     def __init__(self, lead_name: str, lead_id: str) -> None:
-        super().__init__(instructions=SYSTEM_PROMPT)
+        super().__init__(instructions=_Instructions(SYSTEM_PROMPT))
         self._lead_name = lead_name
         self._lead_id = lead_id
 
