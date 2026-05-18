@@ -1,0 +1,40 @@
+# Environment — protect secrets, keep templates and test config
+.env
+!.env.example
+!backend/.env.test
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+
+# SQLite data
+*.db
+backend/data/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Claude Code settings
+.claude/
+
+# Temporary diagnostic scripts
+backend/check_lk.py
+backend/check_tts.py
+
+# Generated Confluence HTML exports
+confluence_*.html

@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+
+  # ── FastAPI REST API ─────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      target: runtime
+    ports:
+      - "8000:8000"
+    env_file: .env
+    volumes:
+      - db_data:/app/data
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── LiveKit Voice Agent worker ───────────────────────────────────────────────
+  agent:
+    build:
+      context: ./backend
+      target: runtime
+    env_file: .env
+    depends_on:
+      backend:
+        condition: service_healthy
+    command: python -m app.agent.worker start
+
+  # ── React + Vite frontend ────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    env_file: .env
+    environment:
+      - VITE_LIVEKIT_URL=${LIVEKIT_URL}
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+
+volumes:
+  db_data:

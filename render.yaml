@@ -1,0 +1,76 @@
+services:
+  # ── FastAPI Backend ──────────────────────────────────────────────────────────
+  - type: web
+    name: icici-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install poetry && poetry config virtualenvs.create false && poetry install --no-root
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false          # Set this to your Supabase/Neon PostgreSQL URL
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+      - key: DEEPGRAM_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CARTESIA_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: llama-3.1-8b-instant
+      - key: CARTESIA_VOICE_ID
+        value: 79a125e8-cd45-4c13-8a67-188112f4dd22
+      - key: MIN_TRANSCRIPT_WORDS
+        value: "1"
+      - key: MIN_TRANSCRIPT_CONFIDENCE
+        value: "0.65"
+      - key: DEBUG
+        value: "false"
+      - key: APP_NAME
+        value: ICICI Prudential Voice Agent
+      - key: APP_VERSION
+        value: 0.1.0
+
+  # ── LiveKit Agent Worker ─────────────────────────────────────────────────────
+  - type: worker
+    name: icici-agent
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install poetry && poetry config virtualenvs.create false && poetry install --no-root
+    startCommand: python -m app.agent.worker start
+    envVars:
+      - key: DATABASE_URL
+        sync: false          # Same Supabase/Neon URL as above
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+      - key: DEEPGRAM_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CARTESIA_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: llama-3.1-8b-instant
+      - key: CARTESIA_VOICE_ID
+        value: 79a125e8-cd45-4c13-8a67-188112f4dd22
+      - key: MIN_TRANSCRIPT_WORDS
+        value: "1"
+      - key: MIN_TRANSCRIPT_CONFIDENCE
+        value: "0.65"
+      - key: DEBUG
+        value: "false"
+      - key: APP_NAME
+        value: ICICI Prudential Voice Agent
+      - key: APP_VERSION
+        value: 0.1.0
