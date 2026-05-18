@@ -7,12 +7,13 @@ services:
     build:
       context: ./backend
       target: runtime
-    ports:
-      - "8000:8000"
-    env_file: .env
+    expose:
+      - "8000"
+    env_file: ./backend/.env
     volumes:
       - db_data:/app/data
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
@@ -24,27 +25,22 @@ services:
     build:
       context: ./backend
       target: runtime
-    env_file: .env
+    env_file: ./backend/.env
     depends_on:
       backend:
         condition: service_healthy
     command: python -m app.agent.worker start
+    restart: always
 
-  # ── React + Vite frontend ────────────────────────────────────────────────────
+  # ── React frontend served by Nginx (port 80) ─────────────────────────────────
   frontend:
     build:
       context: ./frontend
     ports:
-      - "5173:5173"
-    env_file: .env
-    environment:
-      - VITE_LIVEKIT_URL=${LIVEKIT_URL}
+      - "80:80"
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: npm run dev -- --host
+    restart: always
 
 volumes:
   db_data:
