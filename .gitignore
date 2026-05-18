@@ -29,8 +29,12 @@ frontend/.vite/
 .idea/
 *.swp
 
-# Claude Code settings
+# Claude Code settings and AI-generated files
 .claude/
+DOCUMENTATION.md
+docs/
+*.claude.md
+CLAUDE.md
 
 # Temporary diagnostic scripts
 backend/check_lk.py
