@@ -1,5 +1,4 @@
 import {
-  AudioConference,
   ControlBar,
   LiveKitRoom,
   RoomAudioRenderer,
@@ -17,7 +16,7 @@ interface Props {
 }
 
 function AgentStatus() {
-  const { state, audioTrack } = useVoiceAssistant();
+  const { state } = useVoiceAssistant();
   const connection = useConnectionState();
 
   const label =
