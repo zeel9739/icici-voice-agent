@@ -16,7 +16,7 @@ from collections.abc import AsyncGenerator
 from livekit import agents
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
 from livekit.agents import llm as agents_llm
-from livekit.agents.voice.agent import Instructions, ModelSettings
+from livekit.agents.voice.agent import ModelSettings
 from livekit.agents.voice.room_io.types import RoomOptions
 from livekit.plugins import cartesia, deepgram, groq, silero
 
@@ -50,7 +50,7 @@ class LeadQualifierAgent(Agent):
     """Voice agent that qualifies ICICI Prudential AMC leads."""
 
     def __init__(self, lead_name: str, lead_id: str) -> None:
-        super().__init__(instructions=Instructions(SYSTEM_PROMPT))
+        super().__init__(instructions=SYSTEM_PROMPT)
         self._lead_name = lead_name
         self._lead_id = lead_id
 
