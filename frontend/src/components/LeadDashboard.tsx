@@ -46,8 +46,18 @@ export function LeadDashboard({ onDial }: Props) {
   }
 
   async function handleDial(leadId: string) {
-    setDialingId(leadId);
     setError(null);
+
+    // Request mic permission before connecting — required for WebRTC audio
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop()); // release immediately; LiveKit will re-acquire
+    } catch {
+      setError("Microphone access is required to start the call. Please allow mic permission and try again.");
+      return;
+    }
+
+    setDialingId(leadId);
     const res = await fetch(`${API_BASE}/api/v1/leads/${leadId}/dial`, { method: "POST" });
     if (!res.ok) {
       const err = await res.json();
